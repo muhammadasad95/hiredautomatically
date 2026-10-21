@@ -1,0 +1,19 @@
+# AI & Foundation Models
+anthropic>=0.18.0
+
+# Job Scraping & Automation
+python-jobspy>=1.1.0
+playwright>=1.40.0
+
+# Document Handling & PDF Generation
+pypdf>=3.10.0
+fpdf2>=2.7.0
+
+# HTTP Requests & Enrichment APIs
+requests>=2.31.0
+
+# Data Analysis & Storage
+pandas>=2.0.0
+
+# Environment Management
+python-dotenv>=1.0.0
