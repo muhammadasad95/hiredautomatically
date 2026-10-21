@@ -25,3 +25,5 @@ __pycache__/
 Thumbs.db
 .vscode/
 .idea/
+resume.pdf
+/generated/

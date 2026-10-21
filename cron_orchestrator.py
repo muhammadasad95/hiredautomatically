@@ -7,27 +7,28 @@ from outreach import dispatch_outreach_campaign
 
 def run_pipeline():
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\n==========================================")
+    print("\n==========================================")
     print(f" Starting Global Autonomous Engine [{timestamp}]")
     print(f" Target Titles: {len(CORE_TITLES)} specialized roles")
-    print(f"==========================================")
+    print("==========================================")
 
     # Job #1 (Part A): Gather raw postings & Tailor via Claude
     print("\n[Job #1 - Step A] Aggregating Global Job Postings (Past Week)...")
-    fetch_and_store_jobs(titles=CORE_TITLES, max_results_per_title=15)
+    #fetch_and_store_jobs(titles=CORE_TITLES, max_results_per_title=15)
 
     print("\n[Job #1 - Step B] Running Claude Resume & Cover Letter Tailoring...")
     process_pending_jobs()
 
-    # Job #1 (Part C): Execute actual job applications
-    print("\n[Job #1 - Step C] Executing Automated Job Applications...")
-    apply_to_tailored_jobs()
-
-    # Job #2 & #3: Enrich company decision-makers & Outreach
-    print("\n[Job #2 & #3] Fetching Employee, Recruiter, & Executive Contacts via Apollo...")
+    # Enrichment must run before review changes job states out of TAILORED.
+    print("\n[Job #2] Fetching Employee, Recruiter, & Executive Contacts via Apollo...")
     enrich_all_tailored_companies()
 
-    print("\n[Job #2 & #3] Dispatching Referral & Executive Cold Outreach Campaigns...")
+    # The browser step currently reviews listings but does not submit applications.
+    print("\n[Job #1 - Step C] Reviewing prioritized job listings...")
+    apply_to_tailored_jobs()
+
+    # Outreach is preview-only unless explicitly enabled in environment settings.
+    print("\n[Job #3] Preparing bounded outreach previews (SMTP disabled by default)...")
     dispatch_outreach_campaign()
 
     print(f"\nPipeline execution finished successfully at {datetime.datetime.now().strftime('%H:%M:%S')}.\n")
