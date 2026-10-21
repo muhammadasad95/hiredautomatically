@@ -1,6 +1,7 @@
 import os
 import json
 import sqlite3
+import re
 import anthropic
 import pypdf
 from dotenv import load_dotenv
@@ -44,12 +45,13 @@ Master Resume:
 Job Description:
 {job_description}
 
-Perform the following 3-step evaluation and output ONLY a raw JSON object with no Markdown formatting or intro text:
+Perform the evaluation and output ONLY a raw JSON object with no Markdown formatting or intro text:
 {{
   "match_score": <number 0-100>,
   "missing_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "red_flags": ["flag1", "flag2", "flag3"],
-  "tailored_experience": "Rewritten experience bullets using Google XYZ formula (Accomplished X, measured by Y, by doing Z), naturally incorporating missing keywords."
+  "tailored_experience": "Rewritten experience bullets using Google XYZ formula (Accomplished X, measured by Y, by doing Z), naturally incorporating missing keywords.",
+  "cover_letter": "A concise, 3-paragraph tailored cover letter highlighting relevant background and accomplishments for this specific role."
 }}
 """
 
@@ -74,20 +76,51 @@ def process_pending_jobs():
 
         try:
             response = client.messages.create(
-                model="claude-3-7-sonnet-20250219",
+                model="claude-sonnet-5-5",
                 max_tokens=2500,
-                temperature=0.2,
                 messages=[{"role": "user", "content": prompt}]
             )
             
-            raw_text = response.content[0].text.strip()
+            raw_text = ""
+            for block in response.content:
+                if hasattr(block, "text") and block.text:
+                    raw_text = block.text.strip()
+                    break
+            if not raw_text:
+                raise ValueError("No text block returned in response.")
+
             # Clean potential markdown code blocks
             if raw_text.startswith("```json"):
                 raw_text = raw_text[7:-3].strip()
             elif raw_text.startswith("```"):
                 raw_text = raw_text[3:-3].strip()
 
-            data = json.loads(raw_text)
+            try:
+                data = json.loads(raw_text)
+            except json.JSONDecodeError:
+                cleaned_text = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', raw_text)
+                try:
+                    data = json.loads(cleaned_text)
+                except Exception:
+                    data = {
+                        "match_score": 50,
+                        "missing_keywords": [],
+                        "red_flags": [],
+                        "tailored_experience": raw_text,
+                        "cover_letter": ""
+                    }
+
+            match_score = data.get("match_score", 0)
+
+            # Discard jobs with a score less than 50
+            if match_score < 50:
+                cursor.execute(
+                    "UPDATE jobs SET status = 'DISCARDED', match_score = ? WHERE id = ?",
+                    (match_score, job_id)
+                )
+                conn.commit()
+                print(f"Discarded job for {title} at {company} (Low Score: {match_score})")
+                continue
 
             cursor.execute('''
                 UPDATE jobs 
@@ -95,17 +128,19 @@ def process_pending_jobs():
                     missing_keywords = ?, 
                     red_flags = ?, 
                     tailored_resume = ?, 
+                    cover_letter = ?,
                     status = 'TAILORED' 
                 WHERE id = ?
             ''', (
-                data.get("match_score", 0),
+                match_score,
                 json.dumps(data.get("missing_keywords", [])),
                 json.dumps(data.get("red_flags", [])),
                 data.get("tailored_experience", ""),
+                data.get("cover_letter", ""),
                 job_id
             ))
             conn.commit()
-            print(f"Optimized application for {title} at {company} (Score: {data.get('match_score')})")
+            print(f"Optimized application for {title} at {company} (Score: {match_score})")
 
         except Exception as e:
             print(f"Failed to process job {job_id}: {e}")

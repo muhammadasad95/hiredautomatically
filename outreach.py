@@ -16,8 +16,11 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+WORKSPACE_ID = os.getenv("ANTHROPIC_WORKSPACE_ID", "default")
 
 DB_NAME = "jobs.db"
+
+# Pass default headers for org-wide API keys requiring a workspace context
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 EMAIL_PROMPT = """
@@ -36,7 +39,7 @@ Return raw JSON with keys: "subject", "body".
 def generate_email_content(company, first_name, title):
     prompt = EMAIL_PROMPT.format(company=company, first_name=first_name, title=title)
     response = client.messages.create(
-        model="claude-3-7-sonnet-20250219",
+        model="claude-sonnet-5-5",
         max_tokens=500,
         messages=[{"role": "user", "content": prompt}]
     )
