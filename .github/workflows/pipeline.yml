@@ -32,7 +32,7 @@ jobs:
       - name: Fetch Free Proxy
         run: |
           echo "Fetching public free proxy..."
-          PROXY_IP=$(curl -s "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=ipport&format=text&protocol=http&timeout=5000" | head -n 1)
+          PROXY_IP=$(curl -s "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=ipport&format=text&protocol=http&timeout=5000" | head -n 1 | tr -d '\r' | tr -d '\n')
           
           if [ -z "$PROXY_IP" ]; then
             echo "Failed to fetch proxy, running direct."
@@ -43,7 +43,6 @@ jobs:
             echo "HTTPS_PROXY=http://$PROXY_IP" >> $GITHUB_ENV
             echo "PROXY_URL=http://$PROXY_IP" >> $GITHUB_ENV
           fi
-      # -----------------------------------------------------------
 
       - name: Run Autonomous Pipeline
         env:
