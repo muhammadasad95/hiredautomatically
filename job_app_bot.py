@@ -10,7 +10,7 @@ def apply_to_tailored_jobs():
     cursor = conn.cursor()
     
     # Fetch jobs that are tailored but not yet applied
-    cursor.execute("SELECT id, title, company, job_url, tailored_resume, cover_letter FROM jobs WHERE status = 'TAILORED'")
+    cursor.execute("SELECT id, title, company, job_url, tailored_resume, cover_letter FROM jobs WHERE status = 'TAILORED' LIMIT 100")
     jobs_to_apply = cursor.fetchall()
     
     if not jobs_to_apply:

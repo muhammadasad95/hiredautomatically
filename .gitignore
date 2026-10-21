@@ -19,9 +19,6 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
-# Generated Artifacts & PDF Outputs
-*.pdf
-!resume.pdf  # Keep the root template resume.pdf if tracked, or remove this line if strictly local
 
 # IDE & OS Files
 .DS_Store

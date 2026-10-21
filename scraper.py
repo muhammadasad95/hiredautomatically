@@ -84,7 +84,7 @@ def fetch_and_store_jobs(titles=CORE_TITLES, max_results_per_title=15):
                     location=country,
                     results_wanted=max_results_per_title,
                     country_indeed=country,
-                    hours_old=168,
+                    hours_old=720,
                     proxies=PROXIES  # <--- Proxy injected here
                 )
 
