@@ -28,6 +28,23 @@ jobs:
       - name: Install Playwright Browsers
         run: python -m playwright install --with-deps
 
+      # --- ADDED: Fetch a free proxy dynamically for the runner ---
+      - name: Fetch Free Proxy
+        run: |
+          echo "Fetching public free proxy..."
+          PROXY_IP=$(curl -s "https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=ipport&format=text&protocol=http&timeout=5000" | head -n 1)
+          
+          if [ -z "$PROXY_IP" ]; then
+            echo "Failed to fetch proxy, running direct."
+            echo "PROXY_URL=" >> $GITHUB_ENV
+          else
+            echo "Successfully fetched proxy: $PROXY_IP"
+            echo "HTTP_PROXY=http://$PROXY_IP" >> $GITHUB_ENV
+            echo "HTTPS_PROXY=http://$PROXY_IP" >> $GITHUB_ENV
+            echo "PROXY_URL=http://$PROXY_IP" >> $GITHUB_ENV
+          fi
+      # -----------------------------------------------------------
+
       - name: Run Autonomous Pipeline
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -36,5 +53,8 @@ jobs:
           SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          # Mapped from the dynamic step above (overrides any old static secret)
+          PROXY_URL: ${{ env.PROXY_URL }}
+          HTTP_PROXY: ${{ env.HTTP_PROXY }}
+          HTTPS_PROXY: ${{ env.HTTPS_PROXY }}
         run: python cron_orchestrator.py

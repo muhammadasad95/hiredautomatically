@@ -1,3 +1,4 @@
+import os
 import datetime
 from scraper import fetch_and_store_jobs, CORE_TITLES
 from claude_engine import process_pending_jobs
@@ -5,7 +6,21 @@ from job_app_bot import apply_to_tailored_jobs
 from apollo_enrichment import enrich_all_tailored_companies
 from outreach import dispatch_outreach_campaign
 
+def configure_environment_proxies():
+    """Ensures proxies fetched from GitHub Actions are respected by underlying network libraries."""
+    proxy_url = os.getenv("PROXY_URL") or os.getenv("HTTP_PROXY")
+    if proxy_url:
+        print(f"[Proxy Config] Active proxy detected: {proxy_url}")
+        # Explicitly set standard environment variables so requests/curl/jobspy catch them
+        os.environ["HTTP_PROXY"] = proxy_url
+        os.environ["HTTPS_PROXY"] = proxy_url
+    else:
+        print("[Proxy Config] No proxy environment variable found. Running direct connection.")
+
 def run_pipeline():
+    # Configure proxies dynamically at runtime execution
+    configure_environment_proxies()
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"\n==========================================")
     print(f" Starting Global Autonomous Engine [{timestamp}]")
